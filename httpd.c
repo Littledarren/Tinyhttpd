@@ -34,7 +34,7 @@
 #define STDOUT  1
 #define STDERR  2
 
-void accept_request(void *);
+void* accept_request(void *);
 void bad_request(int);
 void cat(int, FILE *);
 void cannot_execute(int);
@@ -52,10 +52,10 @@ void unimplemented(int);
  * return.  Process the request appropriately.
  * Parameters: the socket connected to the client */
 /**********************************************************************/
-void accept_request(void *arg)
+void* accept_request(void *arg)
 {
-    int client = (intptr_t)arg;
-    char buf[1024];
+    int client =*(int*)arg;
+    char buf[2048];
     size_t numchars;
     char method[255];
     char url[255];
@@ -67,6 +67,7 @@ void accept_request(void *arg)
     char *query_string = NULL;
 
     numchars = get_line(client, buf, sizeof(buf));
+    printf("%.2048s",buf);
     i = 0; j = 0;
     while (!ISspace(buf[i]) && (i < sizeof(method) - 1))
     {
@@ -79,7 +80,7 @@ void accept_request(void *arg)
     if (strcasecmp(method, "GET") && strcasecmp(method, "POST"))
     {
         unimplemented(client);
-        return;
+        return NULL;
     }
 
     if (strcasecmp(method, "POST") == 0)
@@ -131,6 +132,7 @@ void accept_request(void *arg)
     }
 
     close(client);
+    return NULL;
 }
 
 /**********************************************************************/
@@ -505,8 +507,8 @@ int main(void)
                 &client_name_len);
         if (client_sock == -1)
             error_die("accept");
-        /* accept_request(&client_sock); */
-        if (pthread_create(&newthread , NULL, (void *)accept_request, (void *)(intptr_t)client_sock) != 0)
+        //accept_request(&client_sock); 
+        if (pthread_create(&newthread , NULL, accept_request, &client_sock) != 0)
             perror("pthread_create");
     }
 
